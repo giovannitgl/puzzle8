@@ -136,12 +136,18 @@ class Solver:
     def dfs(self, puzzle):
         """
         Searches a solution for 8 puzzle, using Depth-First Search
-        :param puzzle:  Array containing the puzzle state
+        :param puzzle: Array containing the puzzle state
         :return:
         """
         return self.no_information_solver(puzzle, 'dfs')
 
     def ids(self, puzzle):
+        """
+        Searches multiple depths of a DFS search, looking
+        for solutions of 8 puzzle
+        :param puzzle: Array containing the puzzle state
+        :return:
+        """
         cumulative_searches = 0
         for i in range(0, 64):
             solution, searches, movements = self.ids_recursive(puzzle, i)
@@ -151,6 +157,14 @@ class Solver:
         return None, cumulative_searches, []
 
     def ids_recursive(self, puzzle, limit):
+        """
+        Recursive Function for searching using DFS with a limited depth.
+
+        Used for IDS.
+        :param puzzle: Array containing the puzzle state
+        :param limit:
+        :return:
+        """
         searches = 0
 
         # Initializes search nodes and inserts first state into Frontier
@@ -250,7 +264,17 @@ class Solver:
         return None, searches, []
 
     def A_star_manhattan(self, puzzle):
+        """
+        Calls A* search with Manhattan Distance Heuristic
+        :param puzzle: Array containing the puzzle state
+        :return:
+        """
         return self.A_star(puzzle, 'manhattan')
 
     def A_star_misplaced(self, puzzle):
+        """
+        Calls A* search with Misplaced Tiles Heuristic
+        :param puzzle: Array containing the puzzle state
+        :return:
+        """
         return self.A_star(puzzle, 'misplaced')
