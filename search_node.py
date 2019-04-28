@@ -1,5 +1,6 @@
 from collections import deque
 from heapq import heappush, heappop, heapify
+import random
 
 # Constants of search methods
 FIFO = 'FIFO'
@@ -7,6 +8,7 @@ LIFO = 'LIFO'
 UCS = 'UCS'
 SUM = 'SUM'
 STAR = 'STAR'
+HILL = 'HILL'
 
 
 class SearchNodes:
@@ -39,6 +41,9 @@ class SearchNodes:
         elif mode == 'astar':
             self.mode = STAR
             self._frontier = []
+        elif mode == 'hill':
+            self.mode = HILL
+            self._frontier = []
 
     def push_frontier(self, state, parent, action, cost=None, depth=None):
         parent_as_str = SearchNodes.puzzle_to_key(parent) if parent is not None else ''
@@ -67,6 +72,8 @@ class SearchNodes:
             heappush(self._frontier, (cost, node_as_str))
         elif self.mode == STAR:
             heappush(self._frontier, (cost, node_as_str))
+        elif self.mode == HILL:
+            heappush(self._frontier, (cost, node_as_str, action))
 
     def pop_frontier(self, return_cost=False, return_depth=False):
         content = None
@@ -80,6 +87,8 @@ class SearchNodes:
             cost, content = heappop(self._frontier)
         elif self.mode == STAR:
             cost, content = heappop(self._frontier)
+        elif self.mode == HILL:
+            cost, content, action = self.hill_climb_pop()
 
         self._frontier_set.remove(content)
 
@@ -94,6 +103,9 @@ class SearchNodes:
         if return_depth:
             depth = self.get_depth(content)
             result.append(depth)
+
+        if self.mode == HILL:
+            result.append(action)
 
         return tuple(result)
 
@@ -118,7 +130,6 @@ class SearchNodes:
         parent_as_str = SearchNodes.puzzle_to_key(parent)
         node_hist, action_hist, cost_hist, depth = self._movements[node_as_str].split('|')
         if int(cost_hist) > cost:
-            print('HERE')
             self._movements[node_as_str] = ''.join([parent_as_str, '|', action, '|', str(cost), '|', str(depth)])
             index = self._frontier.index((cost_hist, node_as_str))
             self._frontier[index] = (cost, node_as_str)
@@ -128,7 +139,7 @@ class SearchNodes:
         puzzle_as_str = SearchNodes.puzzle_to_key(puzzle)
         parent = self._movements[puzzle_as_str]
         solution = action[0] if action is not None else ''
-        while parent is not None:
+        while parent is not None and parent != '':
             parent_str, movement, cost, depth = parent.split('|')
             solution = ''.join([solution, movement])
             parent = self._movements[parent_str]
@@ -143,6 +154,17 @@ class SearchNodes:
 
         _, _, _, depth = history.split('|')
         return int(depth)
+
+    def hill_climb_pop(self):
+        costs = []
+        cost, content, action = heappop(self._frontier)
+        costs.append((cost, content, action))
+        for c, con, act in self._frontier:
+            if c == cost:
+                costs.append((c, con, act))
+        self._frontier = []
+        return random.choice(costs)
+
 
     @staticmethod
     def puzzle_to_key(puzzle):

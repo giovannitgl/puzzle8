@@ -33,7 +33,6 @@ class Solver:
                     cost += abs(cur_row - exp_row) + abs(cur_col - exp_col)
         return cost
 
-
     def no_information_solver(self, puzzle, mode):
         """
         Solves the 8-puzzle, can be used for bfs or dfs
@@ -278,3 +277,39 @@ class Solver:
         :return:
         """
         return self.A_star(puzzle, 'misplaced')
+
+    def hill_climb(self, puzzle, k):
+        """
+        Searches for solutions using hill climb, in order to find
+        local best solutions.
+        :param puzzle: Array containing the puzzle state
+        :return:
+        """
+        searches = 0
+        search_node = SearchNodes('hill')
+        current_cost = self.heuristic_cost(puzzle, 'manhattan')
+        search_node.push_frontier(puzzle, None, None, current_cost)
+        side_move = -1
+        movements = []
+        while True:
+            searches += 1
+            neighbor, neighbor_cost, neigh_action = search_node.pop_frontier(return_cost=True)
+            if neigh_action is not None:
+                movements.append(neigh_action)
+
+            if PuzzleHelper.check_puzzle_finished(neighbor):
+                return neighbor, searches, movements
+
+            if neighbor_cost >= current_cost:
+                side_move += 1
+                if side_move == k:
+                    break
+
+            current_cost = neighbor_cost
+
+            for action in ACTIONS:
+                child_puzzle = PuzzleHelper.move_puzzle(neighbor[:], action)
+                if child_puzzle is not None:
+                    child_cost = self.heuristic_cost(child_puzzle, 'misplaced')
+                    search_node.push_frontier(child_puzzle, neighbor, action, child_cost)
+        return None, searches, []
