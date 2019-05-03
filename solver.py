@@ -257,7 +257,7 @@ class Solver:
                     if not search_node.is_explored(child_puzzle):
                         cost = child_depth + self.heuristic_cost(child_puzzle, mode)
                         if not search_node.is_in_frontier(child_puzzle):
-                            search_node.push_frontier(child_puzzle, node_puzzle, action, cost, depth)
+                            search_node.push_frontier(child_puzzle, node_puzzle, action, cost, child_depth)
                         else:
                             search_node.swap_frontier_if_better(child_puzzle, node_puzzle, action, cost, child_depth)
         return None, searches, []

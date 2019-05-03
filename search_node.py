@@ -131,7 +131,7 @@ class SearchNodes:
         node_hist, action_hist, cost_hist, depth = self._movements[node_as_str].split('|')
         if int(cost_hist) > cost:
             self._movements[node_as_str] = ''.join([parent_as_str, '|', action, '|', str(cost), '|', str(depth)])
-            index = self._frontier.index((cost_hist, node_as_str))
+            index = self._frontier.index((int(cost_hist), node_as_str))
             self._frontier[index] = (cost, node_as_str)
             heapify(self._frontier)
 
@@ -169,3 +169,7 @@ class SearchNodes:
     @staticmethod
     def puzzle_to_key(puzzle):
         return ''.join(str(x) for x in puzzle)
+
+    @staticmethod
+    def s(tups, elem):
+        return filter(lambda tup: elem in tup, tups)
