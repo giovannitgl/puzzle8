@@ -1,5 +1,7 @@
 from search_node import SearchNodes
 from puzzle import PuzzleHelper
+import sys
+from time import time
 
 # Action constants
 UP = 'UP'
@@ -148,48 +150,44 @@ class Solver:
         :return:
         """
         cumulative_searches = 0
-        for i in range(0, 64):
-            solution, searches, movements = self.ids_recursive(puzzle, i)
+        for i in range(0, 32):
+            solution, searches, movements = self.dls(puzzle, i)
             cumulative_searches += searches
             if solution is not None:
                 return solution, cumulative_searches, movements
         return None, cumulative_searches, []
 
-    def ids_recursive(self, puzzle, limit):
+    def dls(self, puzzle, limit):
+        return self.dls_recursive(puzzle, limit)
+
+    def dls_recursive(self, puzzle, limit):
         """
         Recursive Function for searching using DFS with a limited depth.
 
         Used for IDS.
         :param puzzle: Array containing the puzzle state
-        :param limit:
+        :param limit: maximum depth it can search
         :return:
         """
-        searches = 0
-
-        # Initializes search nodes and inserts first state into Frontier
+        searches = 1
         if PuzzleHelper.check_puzzle_finished(puzzle):
-            return puzzle, searches, []
-
-        search_node = SearchNodes('dfs')
-        search_node.push_frontier(puzzle, None, None, depth=0)
-
-        while search_node.frontier_has_next():
-            searches += 1
-            node_puzzle, parent_depth = search_node.pop_frontier(return_depth=True)
-            search_node.push_explored(node_puzzle)
+            return puzzle, searches, ''
+        elif limit == 0:
+            return None, searches, ''
+        else:
+            cutoff = False
             for action in ACTIONS:
-                child_depth = parent_depth + 1
-                child_puzzle = PuzzleHelper.move_puzzle(node_puzzle[:], action)
-                if child_puzzle is not None \
-                        and not search_node.is_explored(child_puzzle) \
-                        and not search_node.is_in_frontier(child_puzzle):
-                    # If finished, returns solution
-                    if PuzzleHelper.check_puzzle_finished(child_puzzle):
-                        return child_puzzle, searches, search_node.get_solution(node_puzzle, action)
-                    # Else, add to frontier
-                    if child_depth <= limit:
-                        search_node.push_frontier(child_puzzle, node_puzzle, action, depth=child_depth)
-        return None, searches, []
+                child_puzzle = PuzzleHelper.move_puzzle(puzzle[:], action)
+                if child_puzzle is not None:
+                    result, child_searches, movements = self.dls_recursive(child_puzzle, limit - 1)
+                    searches += child_searches
+                    if result is None:
+                        cutoff = True
+                    else:
+                        movements += action[0]
+                        return result, searches, movements
+        if cutoff:
+            return None, 0, []
 
     def ucs(self, puzzle):
         """
@@ -221,8 +219,6 @@ class Solver:
                 if child_puzzle is not None \
                         and not search_node.is_explored(child_puzzle) \
                         and not search_node.is_in_frontier(child_puzzle):
-                    # If finished, returns solution
-                    # Else, add to frontier
                     search_node.push_frontier(child_puzzle, node_puzzle, action, cost=cost)
                 elif child_puzzle is not None and search_node.is_in_frontier(child_puzzle):
                     search_node.swap_frontier_if_better(child_puzzle, node_puzzle, action, cost, cost)
@@ -313,3 +309,43 @@ class Solver:
                     child_cost = self.heuristic_cost(child_puzzle, 'misplaced')
                     search_node.push_frontier(child_puzzle, neighbor, action, child_cost)
         return None, searches, []
+
+
+if __name__ == '__main__':
+    method = sys.argv[1]
+    puzzle = sys.argv[2].split(' ')
+    puzzle = [int(x) for x in puzzle]
+
+    solver = Solver()
+    solution = None
+    start = time()
+
+    if method == 'bfs':
+        solution = solver.bfs(puzzle)
+    elif method == 'ids':
+        solution = solver.ids(puzzle)
+    elif method == 'ucs':
+        solution = solver.ucs(puzzle)
+    elif method == 'greedymis':
+        solution = solver.greedy_sum_of_misplaced(puzzle)
+    elif method == 'greedyman':
+        solution = solver.greedy_sum_manhattan(puzzle)
+    elif method == 'aman':
+        solution = solver.A_star_manhattan(puzzle)
+    elif method == 'amis':
+        solution = solver.A_star_misplaced(puzzle)
+    elif method == 'hill':
+        solution = solver.hill_climb(puzzle, 100)
+
+    print('METHOD:', method)
+    if solution[0] is None:
+        print('ERROR: Could not solve')
+        print('Expansions:', solution[1])
+    else:
+        PuzzleHelper.print_puzzle(solution[0])
+        print('Expansions:', solution[1])
+        print('Solution:', solution[2])
+        print('Solution Size:', len(solution[2]))
+    print('Took', time() - start, 'seconds')
+    print('/' * 20)
+    print()

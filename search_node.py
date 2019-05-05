@@ -90,7 +90,10 @@ class SearchNodes:
         elif self.mode == HILL:
             cost, content, action = self.hill_climb_pop()
 
-        self._frontier_set.remove(content)
+        try:
+            self._frontier_set.remove(content)
+        except:
+            None
 
         result = []
 
